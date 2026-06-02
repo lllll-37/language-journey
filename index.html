@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Language Journey | 語言學習追蹤</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
 </head>
 <body>
     <nav class="sidebar" id="sidebar">
@@ -22,6 +23,7 @@
             <li data-target="review"><i class="fa-solid fa-shuffle"></i> 隨機複習</li>
             <li data-target="reports"><i class="fa-solid fa-chart-pie"></i> 統計報告</li>
             <li data-target="settings"><i class="fa-solid fa-gear"></i> 設定與備份</li>
+            <li data-target="changelog"><i class="fa-solid fa-code-branch"></i> 開發日誌</li>
         </ul>
         <div class="mobile-toggle" id="mobile-toggle">
             <i class="fa-solid fa-bars"></i>
@@ -147,7 +149,7 @@
                 <input type="text" id="search-mistakes" placeholder="搜尋錯題...">
                 <select id="filter-mistakes">
                     <option value="">所有語言</option>
-                    </select>
+                </select>
             </div>
             <div class="grid-cards" id="mistakes-list"></div>
         </section>
@@ -175,8 +177,7 @@
 
         <section id="reports" class="page-section">
             <h2><i class="fa-solid fa-chart-pie"></i> 學習進度報告</h2>
-            <div class="encouragement-card" id="report-message">
-                </div>
+            <div class="encouragement-card" id="report-message"></div>
             
             <div class="stats-grid">
                 <div class="stat-card">
@@ -235,12 +236,12 @@
                 </div>
             </div>
         </section>
+
         <section id="changelog" class="page-section">
             <h2><i class="fa-solid fa-code-branch"></i> 開發日誌 (Changelog)</h2>
             <p class="text-gray" style="margin-bottom: 20px;">記錄 Language Journey 的進化與成長歷程，落實 Build in Public 的精神！</p>
             
             <div class="changelog-timeline">
-                
                 <div class="changelog-card card">
                     <div class="version-tag badge-blue">v1.1.0</div>
                     <span class="changelog-date">2026-06-02</span>
@@ -262,11 +263,10 @@
                         <li><i class="fa-solid fa-circle-check text-green"></i> <strong>GitHub 風格熱力圖</strong>：動態生成過去 365 天的學習進度矩陣。</li>
                         <li><i class="fa-solid fa-circle-check text-green"></i> <strong>錯題紀錄與隨機複習</strong>：卡片式錯題管理，搭配單字卡閃卡複習模式。</li>
                         <li><i class="fa-solid fa-circle-check text-green"></i> <strong>統計報告</strong>：串接 Chart.js 圖表，自動分析近一週學習時間與月達成率。</li>
-                        <li><i class="fa-solid fa-circle-check text-green"></i> <strong>LocalStorage 永久存儲</strong>：免帳號、免後端，資料安全儲存於個人瀏覽器，支援 JSON 備份匯出。</li>
+                        <li><i class="fa-solid fa-circle-check text-green"></i> <strong>LocalStorage 永久存儲</strong>：資料安全儲存於個人瀏覽器，支援 JSON 備份。</li>
                         <li><i class="fa-solid fa-circle-check text-green"></i> <strong>雙色主題</strong>：支援 Notion 感淺色模式與極簡深色模式。</li>
                     </ul>
                 </div>
-
             </div>
         </section>
     </main>
