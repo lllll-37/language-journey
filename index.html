@@ -237,27 +237,7 @@
             </div>
         </section>
 
-        <section id="changelog" class="page-section">
-            <h2><i class="fa-solid fa-code-branch"></i> 開發日誌 (Changelog)</h2>
-            <p class="text-gray" style="margin-bottom: 20px;">記錄 Language Journey 的進化與成長歷程，落實 Build in Public 的精神！</p>
-            <div class="card" style="border-left: 5px solid #eab308; background-color: rgba(234, 179, 8, 0.1); margin-bottom: 25px; padding: 15px;">
-                <h4 style="color: #eab308; margin: 0 0 8px 0; font-size: 1.1rem;">
-                    <i class="fa-solid fa-lightbulb"></i> 小提醒
-                </h4>
-                <p style="margin: 0; color: inherit; font-size: 0.95rem;">
-                    在編輯 GitHub 程式時要記得<strong>按鉛筆 ✏️</strong> 進入編輯狀態！
-                </p>
-            </div>
-            ```
-
----
-
-### 🔎 貼好之後的正確位置對照
-
-貼好之後，你的網頁底部結構會長這樣：
-
-```html
-        <section id="changelog" class="page-section">
+<section id="changelog" class="page-section">
             <h2><i class="fa-solid fa-code-branch"></i> 開發日誌 (Changelog)</h2>
             <p class="text-gray" style="margin-bottom: 20px;">記錄 Language Journey 的進化與成長歷程，落實 Build in Public 的精神！</p>
             
@@ -271,23 +251,19 @@
             </div>
 
             <div class="changelog-timeline">
+                
                 <div class="changelog-card card">
                     <div class="version-tag badge-blue">v1.1.1</div>
                     <span class="changelog-date">2026-06-02</span>
-                    ...
-            
-            <div class="changelog-timeline">
-                <div class="changelog-card card">
-                <div class="version-tag badge-blue">v1.1.1</div>
-                <span class="changelog-date">2026-06-02</span>
-                <h3>🔍 觀測到視窗適應問題</h3>
-                <ul>
-                    <li>
-                        <i class="fa-solid fa-magnifying-glass" style="color: #0ea5e9; margin-right: 8px;"></i>
-                        <strong>問題發現：</strong>在電腦縮小分頁時，不會顯示菜單按鈕，只能停在某個功能，沒辦法切換頁面（待下個版本修復）。
-                    </li>
-                </ul>
-            </div>
+                    <h3>🔍 觀測到視窗適應問題</h3>
+                    <ul>
+                        <li>
+                            <i class="fa-solid fa-magnifying-glass" style="color: #0ea5e9; margin-right: 8px;"></i>
+                            <strong>問題發現：</strong>在電腦縮小分頁時，不會顯示菜單按鈕，只能停在某個功能，沒辦法切換頁面（待下個版本修復）。
+                        </li>
+                    </ul>
+                </div>
+
                 <div class="changelog-card card">
                     <div class="version-tag badge-blue">v1.1.0</div>
                     <span class="changelog-date">2026-06-02</span>
@@ -305,7 +281,7 @@
                     <p class="text-gray" style="margin: 5px 0 10px 0;">Language Journey 核心功能部署完成，正式上線 GitHub Pages！</p>
                     <ul>
                         <li><i class="fa-solid fa-circle-check text-green"></i> <strong>Dashboard 儀表板</strong>：快速檢視今日打卡狀態、連續天數與累積時間。</li>
-                        <li><i class="fa-solid fa-circle-check text-green"></i> <strong>每日打卡系統</strong>：記錄每日學習內容與時間。</li>
+                        <li><i class="fa-solid fa-circle-check text-green"></i> <strong>每日打卡系統</strong>：記錄每日學習內容與時間.</li>
                         <li><i class="fa-solid fa-circle-check text-green"></i> <strong>GitHub 風格熱力圖</strong>：動態生成過去 365 天的學習進度矩陣。</li>
                         <li><i class="fa-solid fa-circle-check text-green"></i> <strong>錯題紀錄與隨機複習</strong>：卡片式錯題管理，搭配單字卡閃卡複習模式。</li>
                         <li><i class="fa-solid fa-circle-check text-green"></i> <strong>統計報告</strong>：串接 Chart.js 圖表，自動分析近一週學習時間與月達成率。</li>
@@ -313,11 +289,10 @@
                         <li><i class="fa-solid fa-circle-check text-green"></i> <strong>雙色主題</strong>：支援淺色模式與極簡深色模式。</li>
                     </ul>
                 </div>
-            </div>
-        </section>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            </div> </section> </main>
+
+    <script src="[https://cdn.jsdelivr.net/npm/chart.js](https://cdn.jsdelivr.net/npm/chart.js)"></script>
     <script src="script.js"></script>
 </body>
 </html>
