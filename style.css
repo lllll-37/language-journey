@@ -231,3 +231,75 @@ body.dark-mode .encouragement-card { background: #064e3b; color: #a7f3d0; }
     .form-group-row { flex-direction: column; gap: 0; }
     .toolbar { flex-direction: column; }
 }
+/* ===== 開發日誌專用樣式 ===== */
+.changelog-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    position: relative;
+    padding-left: 20px;
+    border-left: 2px solid var(--border-color); /* 時間軸垂直線 */
+    margin-top: 10px;
+}
+
+.changelog-card {
+    position: relative;
+    padding: 20px !important;
+}
+
+/* 時間軸上的小圓點 */
+.changelog-card::before {
+    content: '';
+    position: absolute;
+    left: -27px;
+    top: 24px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    border: 3px solid var(--bg-color);
+}
+
+.changelog-date {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.changelog-card h3 {
+    color: var(--text-main);
+    font-size: 1.2rem;
+    margin: 5px 0 15px 0;
+}
+
+.changelog-card ul {
+    list-style: none;
+    padding-left: 5px;
+}
+
+.changelog-card ul li {
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+    line-height: 1.5;
+    color: var(--text-main);
+}
+
+.changelog-card ul li i {
+    margin-right: 8px;
+    font-size: 0.9rem;
+}
+
+/* 版本標籤樣式 */
+.version-tag {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+.badge-green { background-color: #d1fae5; color: #065f46; }
+.badge-blue { background-color: #dbeafe; color: #1e40af; }
+body.dark-mode .badge-green { background-color: #064e3b; color: #a7f3d0; }
+body.dark-mode .badge-blue { background-color: #1e3a8a; color: #bfdbfe; }
