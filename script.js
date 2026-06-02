@@ -546,4 +546,103 @@ function renderCharts() {
 }
 
 // 啟動應用程式
-init();
+init();// ==========================================
+// 📝 隨手筆記與注意事項 功能邏輯
+// ==========================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    const noteForm = document.getElementById('note-form');
+    const noteTypeSelect = document.getElementById('note-type');
+    const noteTextInput = document.getElementById('note-text');
+    const reminderList = document.getElementById('reminder-list');
+    const noticeList = document.getElementById('notice-list');
+
+    // 1. 從 LocalStorage 載入筆記資料
+    let savedNotes = JSON.parse(localStorage.getItem('language_journey_notes')) || [
+        // 預設給一個小提醒，避免畫面空空的
+        { type: 'reminder', text: '📌 在編輯 GitHub 程式時要記得按鉛筆 ✏️ 進入編輯狀態！' }
+    ];
+
+    // 2. 渲染筆記到畫面上
+    function renderNotes() {
+        // 先清空原有的列表內容
+        reminderList.innerHTML = '';
+        noticeList.innerHTML = '';
+
+        let hasReminder = false;
+        let hasNotice = false;
+
+        savedNotes.forEach((note, index) => {
+            const li = document.createElement('li');
+            li.style.padding = '10px 0';
+            li.style.borderBottom = '1px solid rgba(0,0,0,0.05)';
+            li.style.display = 'flex';
+            li.style.justifyContent = 'space-between';
+            li.style.alignItems = 'center';
+
+            // 內文與刪除按鈕
+            li.innerHTML = `
+                <span>${note.text}</span>
+                <button class="btn-delete-note" data-index="${index}" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 0 5px;">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            `;
+
+            // 分流投放到對應的區塊
+            if (note.type === 'reminder') {
+                reminderList.appendChild(li);
+                hasReminder = true;
+            } else {
+                noticeList.appendChild(li);
+                hasNotice = true;
+            }
+        });
+
+        // 如果空無一物，顯示提示字
+        if (!hasReminder) {
+            reminderList.innerHTML = '<li style="padding: 10px 0; color: gray;">💡 目前尚無小提醒。</li>';
+        }
+        if (!hasNotice) {
+            noticeList.innerHTML = '<li style="padding: 10px 0; color: gray;">📭 目前尚無注意事項。</li>';
+        }
+
+        // 綁定刪除按鈕事件
+        document.querySelectorAll('.btn-delete-note').forEach(btn => {
+            btn.onclick = (e) => {
+                const indexToRemove = e.currentTarget.getAttribute('data-index');
+                savedNotes.splice(indexToRemove, 1); // 刪除該筆資料
+                localStorage.setItem('language_journey_notes', JSON.stringify(savedNotes)); // 更新儲存
+                renderNotes(); // 重新渲染
+            };
+        });
+    }
+
+    // 3. 監聽表單送出事件（新增筆記）
+    if (noteForm) {
+        noteForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // 防止網頁重整
+
+            const type = noteTypeSelect.value;
+            const text = noteTextInput.value.trim();
+            const prefix = type === 'reminder' ? '📌 ' : '⚠️ ';
+
+            if (text) {
+                // 將新筆記推入陣列
+                savedNotes.push({
+                    type: type,
+                    text: prefix + text
+                });
+
+                // 存入 LocalStorage 永久保存
+                localStorage.setItem('language_journey_notes', JSON.stringify(savedNotes));
+
+                // 重新渲染畫面並清空輸入框
+                renderNotes();
+                noteTextInput.value = '';
+            }
+        });
+    }
+
+    // 網頁載入時先執行一次渲染
+    renderNotes();
+});
