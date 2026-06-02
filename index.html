@@ -23,6 +23,7 @@
             <li data-target="review"><i class="fa-solid fa-shuffle"></i> 隨機複習</li>
             <li data-target="reports"><i class="fa-solid fa-chart-pie"></i> 統計報告</li>
             <li data-target="settings"><i class="fa-solid fa-gear"></i> 設定與備份</li>
+            <li data-target="quick-notes"><i class="fa-solid fa-pen-to-square"></i> 隨手筆記</li>
             <li data-target="changelog"><i class="fa-solid fa-code-branch"></i> 開發日誌</li>
         </ul>
         <div class="mobile-toggle" id="mobile-toggle">
@@ -236,7 +237,46 @@
                 </div>
             </div>
         </section>
-
+        <section id="quick-notes" class="page-section">
+            <h2><i class="fa-solid fa-pen-to-square"></i> 隨手筆記與注意事項</h2>
+            
+            <div class="card form-card">
+                <form id="note-form">
+                    <div class="form-group">
+                        <label>記錄類型</label>
+                        <select id="note-type" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color);" required>
+                            <option value="reminder">💡 1. 小提醒</option>
+                            <option value="notice">⚠️ 2. 注意事項</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>內容說明</label>
+                        <textarea id="note-text" rows="3" placeholder="請輸入想紀錄的事情...（例如：編輯 GitHub 要按鉛筆）" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">儲存紀錄</button>
+                </form>
+            </div>
+            
+            <div class="dashboard-lists mt-2">
+                <div class="card">
+                    <h3 style="color: #eab308;"><i class="fa-solid fa-lightbulb"></i> 1. 小提醒</h3>
+                    <ul id="reminder-list" class="simple-list" style="list-style: none; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                            📌 在編輯 GitHub 程式時要記得<strong>按鉛筆 ✏️</strong> 進入編輯狀態！
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h3 style="color: #ef4444;"><i class="fa-solid fa-circle-exclamation"></i> 2. 注意事項</h3>
+                    <ul id="notice-list" class="simple-list" style="list-style: none; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); color: #gray;">
+                            📭 目前尚無其他注意事項。
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
 <section id="changelog" class="page-section">
             <h2><i class="fa-solid fa-code-branch"></i> 開發日誌 (Changelog)</h2>
             <p class="text-gray" style="margin-bottom: 20px;">記錄 Language Journey 的進化與成長歷程，落實 Build in Public 的精神！</p>
