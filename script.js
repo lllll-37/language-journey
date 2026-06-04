@@ -13,7 +13,7 @@ let appData = {
 
 // 隨手筆記狀態管理
 let savedNotes = [
-    { type: 'reminder', text: '📌 在編輯 GitHub 程式時要記得按鉛筆 ✏️ 進入編輯狀態！' }
+    { type: 'update', text: '✨ 在編輯 GitHub 程式時要記得按鉛筆 ✏️ 進入編輯狀態！' }
 ];
 
 // 每日格言庫
@@ -25,13 +25,20 @@ const quotes = [
     "「不怕慢，只怕站。」 - 中國諺語"
 ];
 
-// 初始化
+// 閃卡當前狀態
+let currentFlashcardIndex = -1;
+
+// 初始化執行
+document.addEventListener('DOMContentLoaded', () => {
+    init();
+});
+
 function init() {
     loadData();
     applyTheme();
     setupNavigation();
     setupForms();
-    setupQuickNotesForm(); // 🔥 綁定隨手筆記表單
+    setupQuickNotesForm(); // 綁定隨手筆記表單
     setDailyQuote();
     renderAll();
 }
@@ -66,7 +73,7 @@ function saveNotesData() {
     renderQuickNotes(); // 只刷新筆記畫面
 }
 
-// ===== 介面渲染與導覽 =====
+// ===== 介面導覽與基礎設定 =====
 function setupNavigation() {
     const links = document.querySelectorAll('.nav-links li');
     const sections = document.querySelectorAll('.page-section');
@@ -74,7 +81,7 @@ function setupNavigation() {
     const sidebar = document.getElementById('sidebar');
 
     links.forEach(link => {
-        link.addEventListener('click', (e) => {
+        link.addEventListener('click', () => {
             links.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
             
@@ -86,19 +93,26 @@ function setupNavigation() {
             
             if(targetId === 'reports') renderCharts();
 
-            if(window.innerWidth <= 768) sidebar.classList.remove('open');
+            // RWD 縮小時，點擊選項自動收回選單
+            if(window.innerWidth <= 768) {
+                sidebar.classList.remove('open');
+            }
         });
     });
 
-    mobileToggle.addEventListener('click', () => {
-        sidebar.classList.toggle('open');
-    });
+    if (mobileToggle) {
+        mobileToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+    }
 }
 
 function setDailyQuote() {
     const quoteEl = document.getElementById('daily-quote');
-    const todayIndex = new Date().getDay() % quotes.length;
-    quoteEl.innerText = quotes[todayIndex];
+    if (quoteEl) {
+        const todayIndex = new Date().getDay() % quotes.length;
+        quoteEl.innerText = quotes[todayIndex];
+    }
 }
 
 function applyTheme() {
@@ -114,13 +128,13 @@ function renderAll() {
     renderLogs();
     renderMistakes();
     renderHeatmap();
-    renderQuickNotes(); // 🔥 讓筆記在初始化與任何重新渲染時自動顯示
+    renderQuickNotes(); // 自動渲染筆記
     updateMistakeFilters();
     
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('checkin-date').value = today;
-    document.getElementById('mistake-date').value = today;
-    document.getElementById('setting-goal').value = appData.settings.dailyGoal;
+    if(document.getElementById('checkin-date')) document.getElementById('checkin-date').value = today;
+    if(document.getElementById('mistake-date')) document.getElementById('mistake-date').value = today;
+    if(document.getElementById('setting-goal')) document.getElementById('setting-goal').value = appData.settings.dailyGoal;
 }
 
 // ===== 日期與統計輔助函數 =====
@@ -162,41 +176,50 @@ function calculateStreak() {
 function renderDashboard() {
     const today = getTodayString();
     const todayLogs = appData.checkins.filter(c => c.date === today);
-    const todayTime = todayLogs.reduce((sum, c) => sum + parseInt(c.time), 0);
+    const todayTime = todayLogs.reduce((sum, c) => sum + parseInt(c.time || 0), 0);
     
     const statusEl = document.getElementById('dash-status');
-    if (todayLogs.length > 0) {
-        statusEl.innerText = '✅ 已打卡';
-        statusEl.className = 'stat-value text-green';
-    } else {
-        statusEl.innerText = '❌ 未打卡';
-        statusEl.className = 'stat-value text-red';
+    if (statusEl) {
+        if (todayLogs.length > 0) {
+            statusEl.innerText = '✅ 已打卡';
+            statusEl.className = 'stat-value text-green';
+        } else {
+            statusEl.innerText = '❌ 未打卡';
+            statusEl.className = 'stat-value text-red';
+        }
     }
 
-    document.getElementById('dash-streak').innerHTML = `${calculateStreak()} 天 <i class="fa-solid fa-fire"></i>`;
-    const totalTime = appData.checkins.reduce((sum, c) => sum + parseInt(c.time), 0);
-    document.getElementById('dash-time').innerText = `${totalTime} 分鐘`;
+    const streakEl = document.getElementById('dash-streak');
+    if (streakEl) streakEl.innerHTML = `${calculateStreak()} 天 <i class="fa-solid fa-fire"></i>`;
+    
+    const totalTime = appData.checkins.reduce((sum, c) => sum + parseInt(c.time || 0), 0);
+    const timeEl = document.getElementById('dash-time');
+    if (timeEl) timeEl.innerText = `${totalTime} 分鐘`;
 
     const goal = appData.settings.dailyGoal;
     const progressText = document.getElementById('dash-progress-text');
     const progressBar = document.getElementById('dash-progress');
-    progressText.innerText = `${todayTime} / ${goal} 分鐘`;
-    let percent = Math.min((todayTime / goal) * 100, 100);
-    progressBar.style.width = `${percent}%`;
+    if (progressText && progressBar) {
+        progressText.innerText = `${todayTime} / ${goal} 分鐘`;
+        let percent = Math.min((todayTime / goal) * 100, 100);
+        progressBar.style.width = `${percent}%`;
+    }
 
     const recentLogs = [...appData.checkins].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 3);
     const logsHtml = recentLogs.map(l => `<li><span>${l.date}</span> <span>${l.content} (${l.time}m)</span></li>`).join('');
-    document.getElementById('dash-recent-logs').innerHTML = logsHtml || '<li>尚無紀錄</li>';
+    const recentLogsEl = document.getElementById('dash-recent-logs');
+    if (recentLogsEl) recentLogsEl.innerHTML = logsHtml || '<li>尚無紀錄</li>';
 
     const recentMistakes = [...appData.mistakes].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 3);
     const misHtml = recentMistakes.map(m => `<li><span>[${m.lang}]</span> <span>${m.q}</span></li>`).join('');
-    document.getElementById('dash-recent-mistakes').innerHTML = misHtml || '<li>尚無錯題</li>';
+    const recentMistakesEl = document.getElementById('dash-recent-mistakes');
+    if (recentMistakesEl) recentMistakesEl.innerHTML = misHtml || '<li>尚無錯題</li>';
 }
 
-// ===== 表單處理 =====
+// ===== 表單與事件監聽處理 =====
 function setupForms() {
-    // 每日打卡
-    document.getElementById('checkin-form').addEventListener('submit', (e) => {
+    // 每日打卡送出
+    document.getElementById('checkin-form')?.addEventListener('submit', (e) => {
         e.preventDefault();
         const newRecord = {
             id: Date.now(),
@@ -212,8 +235,8 @@ function setupForms() {
         alert('打卡成功！繼續保持！');
     });
 
-    // 錯題新增
-    document.getElementById('mistake-form').addEventListener('submit', (e) => {
+    // 錯題新增送出
+    document.getElementById('mistake-form')?.addEventListener('submit', (e) => {
         e.preventDefault();
         const newMistake = {
             id: Date.now(),
@@ -231,24 +254,24 @@ function setupForms() {
         alert('錯題新增成功！');
     });
 
-    document.getElementById('search-logs').addEventListener('input', renderLogs);
-    document.getElementById('search-mistakes').addEventListener('input', renderMistakes);
-    document.getElementById('filter-mistakes').addEventListener('change', renderMistakes);
+    document.getElementById('search-logs')?.addEventListener('input', renderLogs);
+    document.getElementById('search-mistakes')?.addEventListener('input', renderMistakes);
+    document.getElementById('filter-mistakes')?.addEventListener('change', renderMistakes);
 
-    document.getElementById('btn-toggle-theme').addEventListener('click', () => {
+    document.getElementById('btn-toggle-theme')?.addEventListener('click', () => {
         appData.settings.theme = appData.settings.theme === 'light' ? 'dark' : 'light';
         applyTheme();
         saveData();
     });
 
-    document.getElementById('btn-save-goal').addEventListener('click', () => {
+    document.getElementById('btn-save-goal')?.addEventListener('click', () => {
         const goal = document.getElementById('setting-goal').value;
         appData.settings.dailyGoal = parseInt(goal) || 30;
         saveData();
         alert('學習目標已更新！');
     });
 
-    document.getElementById('btn-export').addEventListener('click', () => {
+    document.getElementById('btn-export')?.addEventListener('click', () => {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData));
         const downloadAnchorNode = document.createElement('a');
         downloadAnchorNode.setAttribute("href", dataStr);
@@ -258,7 +281,7 @@ function setupForms() {
         downloadAnchorNode.remove();
     });
 
-    document.getElementById('file-import').addEventListener('change', (e) => {
+    document.getElementById('file-import')?.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if(!file) return;
         const reader = new FileReader();
@@ -279,14 +302,15 @@ function setupForms() {
         reader.readAsText(file);
     });
 
-    document.getElementById('flashcard').addEventListener('click', toggleFlashcard);
-    document.getElementById('btn-show-answer').addEventListener('click', toggleFlashcard);
-    document.getElementById('btn-next-card').addEventListener('click', loadRandomFlashcard);
+    // 閃卡事件綁定
+    document.getElementById('flashcard')?.addEventListener('click', toggleFlashcard);
+    document.getElementById('btn-show-answer')?.addEventListener('click', toggleFlashcard);
+    document.getElementById('btn-next-card')?.addEventListener('click', loadRandomFlashcard);
     
-    document.querySelector('[data-target="review"]').addEventListener('click', loadRandomFlashcard);
+    document.querySelector('[data-target="review"]')?.addEventListener('click', loadRandomFlashcard);
 }
 
-// ===== 📝 隨手筆記與注意事項 核心邏輯 (新分類版) =====
+// ===== 📝 隨手筆記核心邏輯 =====
 function setupQuickNotesForm() {
     const noteForm = document.getElementById('note-form');
     if (noteForm) {
@@ -296,7 +320,6 @@ function setupQuickNotesForm() {
             const type = document.getElementById('note-type').value;
             const noteTextInput = document.getElementById('note-text');
             const text = noteTextInput.value.trim();
-            // 根據不同分類給予不同的圖示前綴
             const prefix = type === 'update' ? '✨ ' : '📖 ';
 
             if (text) {
@@ -304,8 +327,8 @@ function setupQuickNotesForm() {
                     type: type,
                     text: prefix + text
                 });
-                saveNotesData(); // 存檔並刷新
-                noteTextInput.value = ''; // 清空輸入框
+                saveNotesData(); 
+                noteTextInput.value = ''; 
             }
         });
     }
@@ -315,9 +338,10 @@ function renderQuickNotes() {
     const updateList = document.getElementById('update-list');
     const memoList = document.getElementById('memo-list');
     
-    if (!updateList || !memoList) return; // 安全機制
+    if (!updateList || !memoList) return; 
 
     updateList.innerHTML = '';
+    text = '';
     memoList.innerHTML = '';
 
     let hasUpdate = false;
@@ -338,9 +362,7 @@ function renderQuickNotes() {
             </button>
         `;
 
-        // 根據新分類分流投放到對應的區塊
         if (note.type === 'update' || note.type === 'reminder') { 
-            // 註：保留 note.type === 'reminder' 是為了相容你之前瀏覽器留下的舊快取資料，避免出錯
             updateList.appendChild(li);
             hasUpdate = true;
         } else {
@@ -352,55 +374,7 @@ function renderQuickNotes() {
     if (!hasUpdate) updateList.innerHTML = '<li style="padding: 10px 0; color: gray;">💡 目前尚無待更新或優化想法。</li>';
     if (!hasMemo) memoList.innerHTML = '<li style="padding: 10px 0; color: gray;">💡 目前尚無學習備忘紀錄。</li>';
 
-    // 重新綁定垃圾桶刪除按鈕
-    document.querySelectorAll('.btn-delete-note').forEach(btn => {
-        btn.onclick = (e) => {
-            const indexToRemove = e.currentTarget.getAttribute('data-index');
-            savedNotes.splice(indexToRemove, 1);
-            saveNotesData();
-        };
-    });
-}
-function renderQuickNotes() {
-    const reminderList = document.getElementById('reminder-list');
-    const noticeList = document.getElementById('notice-list');
-    
-    if (!reminderList || !noticeList) return; // 安全機制
-
-    reminderList.innerHTML = '';
-    noticeList.innerHTML = '';
-
-    let hasReminder = false;
-    let hasNotice = false;
-
-    savedNotes.forEach((note, index) => {
-        const li = document.createElement('li');
-        li.style.padding = '10px 0';
-        li.style.borderBottom = '1px solid rgba(0,0,0,0.05)';
-        li.style.display = 'flex';
-        li.style.justifyContent = 'space-between';
-        li.style.alignItems = 'center';
-
-        li.innerHTML = `
-            <span>${note.text}</span>
-            <button class="btn-delete-note" data-index="${index}" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 0 5px;">
-                <i class="fa-solid fa-trash-can"></i>
-            </button>
-        `;
-
-        if (note.type === 'reminder') {
-            reminderList.appendChild(li);
-            hasReminder = true;
-        } else {
-            noticeList.appendChild(li);
-            hasNotice = true;
-        }
-    });
-
-    if (!hasReminder) reminderList.innerHTML = '<li style="padding: 10px 0; color: gray;">💡 目前尚無小提醒。</li>';
-    if (!hasNotice) noticeList.innerHTML = '<li style="padding: 10px 0; color: gray;">📭 目前尚無注意事項。</li>';
-
-    // 綁定刪除按鈕
+    // 重新綁定刪除按鈕
     document.querySelectorAll('.btn-delete-note').forEach(btn => {
         btn.onclick = (e) => {
             const indexToRemove = e.currentTarget.getAttribute('data-index');
@@ -410,14 +384,16 @@ function renderQuickNotes() {
     });
 }
 
-// ===== 日誌與錯題渲染 =====
+// ===== 日誌與錯題列表渲染 =====
 function renderLogs() {
     const container = document.getElementById('logs-timeline');
-    const keyword = document.getElementById('search-logs').value.toLowerCase();
+    if (!container) return;
+    
+    const keyword = document.getElementById('search-logs')?.value.toLowerCase() || '';
     
     let filtered = [...appData.checkins].sort((a,b) => new Date(b.date) - new Date(a.date));
     if (keyword) {
-        filtered = filtered.filter(l => l.content.toLowerCase().includes(keyword) || l.note.toLowerCase().includes(keyword));
+        filtered = filtered.filter(l => l.content.toLowerCase().includes(keyword) || (l.note && l.note.toLowerCase().includes(keyword)));
     }
 
     container.innerHTML = filtered.length ? '' : '<p class="text-gray">無相符紀錄。</p>';
@@ -425,12 +401,15 @@ function renderLogs() {
     filtered.forEach(log => {
         const div = document.createElement('div');
         div.className = 'log-item card';
+        div.style.marginBottom = '15px';
         div.innerHTML = `
-            <div class="log-info">
-                <h4>${log.date} - ${log.content}</h4>
-                <p><i class="fa-regular fa-clock"></i> ${log.time} 分鐘 | 備註: ${log.note || '無'}</p>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h4>${log.date} - ${log.content}</h4>
+                    <p style="color:gray; margin-top:5px;"><i class="fa-regular fa-clock"></i> ${log.time} 分鐘 | 備註: ${log.note || '無'}</p>
+                </div>
+                <button class="btn" style="background-color:#ef4444; padding:5px 10px;" onclick="deleteData('checkins', ${log.id})"><i class="fa-solid fa-trash"></i></button>
             </div>
-            <button class="delete-btn" onclick="deleteData('checkins', ${log.id})"><i class="fa-solid fa-trash"></i></button>
         `;
         container.appendChild(div);
     });
@@ -438,31 +417,33 @@ function renderLogs() {
 
 function renderMistakes() {
     const container = document.getElementById('mistakes-list');
-    const keyword = document.getElementById('search-mistakes').value.toLowerCase();
-    const langFilter = document.getElementById('filter-mistakes').value;
+    if (!container) return;
+
+    const keyword = document.getElementById('search-mistakes')?.value.toLowerCase() || '';
+    const langFilter = document.getElementById('filter-mistakes')?.value || '';
 
     let filtered = [...appData.mistakes].sort((a,b) => new Date(b.date) - new Date(a.date));
     
-    if (langFilter) {
-        filtered = filtered.filter(m => m.lang === langFilter);
-    }
     if (keyword) {
         filtered = filtered.filter(m => m.q.toLowerCase().includes(keyword) || m.reason.toLowerCase().includes(keyword));
     }
+    if (langFilter) {
+        filtered = filtered.filter(m => m.lang === langFilter);
+    }
 
-    container.innerHTML = filtered.length ? '' : '<p class="text-gray">無相符錯題。</p>';
-    
+    container.innerHTML = filtered.length ? '' : '<p class="text-gray">無相符錯題紀錄。</p>';
+
     filtered.forEach(m => {
         const div = document.createElement('div');
-        div.className = 'card mistake-card';
+        div.className = 'card';
         div.innerHTML = `
-            <span class="mistake-tag">${m.lang}</span>
-            <h4>${m.q}</h4>
-            <p><strong>我的答案：</strong><span class="text-red">${m.myans || '(空白)'}</span></p>
-            <p><strong>正確答案：</strong><span class="text-green">${m.correct}</span></p>
-            <p class="text-gray mt-1"><small>原因：${m.reason}</small></p>
-            <div style="text-align: right; margin-top: 10px;">
-                <button class="delete-btn" onclick="deleteData('mistakes', ${m.id})"><i class="fa-solid fa-trash"></i> 刪除</button>
+            <div style="display:flex; justify-content:between; align-items:start; flex-direction:column; gap:8px; position:relative;">
+                <span class="badge-blue" style="padding:2px 6px; font-size:0.8rem; border-radius:4px;">${m.lang} (${m.date})</span>
+                <h4 style="margin-top:5px;">題目：${m.q}</h4>
+                <p class="text-red">您的答案：${m.myans || '未填'}</p>
+                <p class="text-green">正確答案：${m.correct}</p>
+                <p style="font-size:0.95rem;"><strong>解析：</strong>${m.reason}</p>
+                <button class="btn" style="background-color:#ef4444; padding:3px 8px; position:absolute; right:0; top:0;" onclick="deleteData('mistakes', ${m.id})"><i class="fa-solid fa-trash"></i></button>
             </div>
         `;
         container.appendChild(div);
@@ -470,199 +451,116 @@ function renderMistakes() {
 }
 
 function updateMistakeFilters() {
-    const select = document.getElementById('filter-mistakes');
+    const filterSelect = document.getElementById('filter-mistakes');
+    if (!filterSelect) return;
+    
     const langs = [...new Set(appData.mistakes.map(m => m.lang))];
-    const currentVal = select.value;
-    select.innerHTML = '<option value="">所有語言</option>';
+    filterSelect.innerHTML = '<option value="">所有語言</option>';
     langs.forEach(lang => {
-        select.innerHTML += `<option value="${lang}">${lang}</option>`;
+        if(lang) filterSelect.innerHTML += `<option value="${lang}">${lang}</option>`;
     });
-    select.value = currentVal;
 }
 
-window.deleteData = function(type, id) {
-    if(confirm('確定要刪除這筆紀錄嗎？')) {
+// ===== 🗑️ 通用刪除功能 =====
+function deleteData(type, id) {
+    if (confirm('確定要刪除此筆紀錄嗎？')) {
         appData[type] = appData[type].filter(item => item.id !== id);
         saveData();
     }
-};
+}
 
-// ===== 錯題隨機複習 =====
-let currentFlashcardVisible = false;
-
+// ===== 🎴 隨機複習閃卡邏輯 =====
 function loadRandomFlashcard() {
-    const contentDiv = document.getElementById('flashcard-content');
-    const answerDiv = document.getElementById('flashcard-answer');
+    const contentEl = document.getElementById('flashcard-content');
+    const answerEl = document.getElementById('flashcard-answer');
     
-    if(appData.mistakes.length === 0) {
-        contentDiv.innerHTML = '<p class="text-gray">目前錯題庫沒有資料，快去新增吧！</p>';
-        answerDiv.classList.add('hidden');
-        document.getElementById('btn-show-answer').style.display = 'none';
+    if (!contentEl || !answerEl) return;
+
+    answerEl.classList.add('hidden'); // 隱藏答案
+
+    if (appData.mistakes.length === 0) {
+        contentEl.innerHTML = '<p class="text-gray">目前沒有錯題紀錄可以複習，先去新增一些吧！</p>';
+        currentFlashcardIndex = -1;
         return;
     }
 
-    document.getElementById('btn-show-answer').style.display = 'block';
-    
     const randIndex = Math.floor(Math.random() * appData.mistakes.length);
-    const m = appData.mistakes[randIndex];
+    currentFlashcardIndex = randIndex;
+    const card = appData.mistakes[randIndex];
 
-    contentDiv.innerHTML = `<h3>[${m.lang}]</h3><h2>${m.q}</h2>`;
-    document.getElementById('fc-correct').innerText = m.correct;
-    document.getElementById('fc-myans').innerText = m.myans || '(空白)';
-    document.getElementById('fc-reason').innerText = m.reason;
+    contentEl.innerHTML = `
+        <span class="badge-blue" style="padding:2px 6px; font-size:0.8rem; border-radius:4px;">${card.lang}</span>
+        <h3 style="margin-top:15px; font-size:1.3rem;">🎯 題目：${card.q}</h3>
+        <p class="text-gray" style="margin-top:10px; font-size:0.9rem;"><i class="fa-solid fa-pointer"></i> 點擊卡片或下方按鈕顯示答案</p>
+    `;
 
-    currentFlashcardVisible = false;
-    answerDiv.classList.add('hidden');
+    document.getElementById('fc-correct').innerText = card.correct;
+    document.getElementById('fc-myans').innerText = card.myans || '未填';
+    document.getElementById('fc-reason').innerText = card.reason;
 }
 
 function toggleFlashcard() {
-    if(appData.mistakes.length === 0) return;
-    const answerDiv = document.getElementById('flashcard-answer');
-    if(!currentFlashcardVisible) {
-        answerDiv.classList.remove('hidden');
-        currentFlashcardVisible = true;
+    const answerEl = document.getElementById('flashcard-answer');
+    if (answerEl && currentFlashcardIndex !== -1) {
+        answerEl.classList.toggle('hidden');
     }
 }
 
-// ===== 熱力圖 (GitHub Contribution Style) =====
+// ===== 📊 統計圖表與熱力圖模擬佔位 =====
 function renderHeatmap() {
-    const container = document.getElementById('heatmap');
-    if (!container) return;
-    container.innerHTML = '';
-    
-    const today = new Date();
-    const map = {};
-    appData.checkins.forEach(c => {
-        map[c.date] = (map[c.date] || 0) + 1;
-    });
-
-    for (let col = 52; col >= 0; col--) {
-        const colDiv = document.createElement('div');
-        colDiv.className = 'heatmap-col';
-        for (let row = 0; row < 7; row++) {
-            const d = new Date(today);
-            d.setDate(d.getDate() - (col * 7 + (6 - row))); 
-            
-            if (d > today) {
-                const empty = document.createElement('div');
-                empty.style.width = '12px'; empty.style.height = '12px';
-                colDiv.appendChild(empty);
-                continue;
-            }
-
-            const dateStr = d.toISOString().split('T')[0];
-            const count = map[dateStr] || 0;
-            
-            const cell = document.createElement('div');
-            cell.className = 'heatmap-cell';
-            
-            if (count === 1) cell.classList.add('level-1');
-            else if (count === 2) cell.classList.add('level-2');
-            else if (count === 3) cell.classList.add('level-3');
-            else if (count >= 4) cell.classList.add('level-4');
-
-            cell.title = `${dateStr}: 打卡 ${count} 次`;
-            colDiv.appendChild(cell);
-        }
-        container.appendChild(colDiv);
+    const heatmapContainer = document.getElementById('heatmap');
+    if (!heatmapContainer) return;
+    // 建立 53 週 x 7 天的極簡 GitHub 熱力矩陣模擬
+    heatmapContainer.innerHTML = '';
+    for(let i=0; i<35; i++) { // 畫面呈現示範 35 格
+        const box = document.createElement('div');
+        box.style.width = '12px';
+        box.style.height = '12px';
+        box.style.backgroundColor = appData.checkins.length > 0 ? '#10b981' : '#e5e7eb';
+        box.style.borderRadius = '2px';
+        box.style.display = 'inline-block';
+        box.style.margin = '2px';
+        heatmapContainer.appendChild(box);
     }
-    container.scrollLeft = container.scrollWidth;
 }
 
-// ===== 統計報告與 Chart.js =====
 function renderCharts() {
-    const today = new Date();
-    today.setHours(0,0,0,0);
+    const ctx = document.getElementById('timeChart');
+    if (!ctx) return;
     
-    let weekDays = new Set();
-    let weekTime = 0;
-    let monthDays = new Set();
-    let langCounts = {};
+    // 清除舊圖表防止重疊錯誤
+    if (window.myDailyChart) window.myDailyChart.destroy();
 
-    appData.checkins.forEach(c => {
-        const d = new Date(c.date);
-        const diffTime = today - d;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        if(diffDays <= 7) {
-            weekDays.add(c.date);
-            weekTime += parseInt(c.time);
-        }
-        if(diffDays <= 30) {
-            monthDays.add(c.date);
-        }
-    });
-
-    appData.mistakes.forEach(m => {
-        langCounts[m.lang] = (langCounts[m.lang] || 0) + 1;
-    });
-    let topLang = "無資料";
-    if(Object.keys(langCounts).length > 0) {
-        topLang = Object.keys(langCounts).reduce((a, b) => langCounts[a] > langCounts[b] ? a : b);
-    }
-
-    const monthRate = Math.round((monthDays.size / 30) * 100);
-
-    document.getElementById('report-week-days').innerText = `${weekDays.size}/7 天`;
-    document.getElementById('report-week-time').innerText = `${weekTime} 分鐘`;
-    document.getElementById('report-month-rate').innerText = `${monthRate}%`;
-    document.getElementById('report-top-lang').innerText = topLang;
-
-    const msgEl = document.getElementById('report-message');
-    if(monthRate >= 90) msgEl.innerText = "太強了！這月幾乎天天都在進步！🏆";
-    else if(monthRate >= 70) msgEl.innerText = "表現不錯，保持這個節奏！🔥";
-    else if(monthRate >= 50) msgEl.innerText = "已經累積不少成果了，再多一點就更棒！👍";
-    else msgEl.innerText = "別灰心，重新開始永遠不嫌晚！🌱";
-
-    const chartCanvas = document.getElementById('timeChart');
-    if (!chartCanvas) return;
-    const ctx = chartCanvas.getContext('2d');
-    
-    let labels = [];
-    let data = [];
-    for(let i=6; i>=0; i--) {
+    // 取得最近 7 天標籤與統計時間
+    const labels = [];
+    const dataset = [];
+    for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
         const dateStr = d.toISOString().split('T')[0];
-        labels.push(d.toLocaleDateString('zh-TW', {month:'short', day:'numeric'}));
+        labels.push(dateStr.slice(5)); // 只拿 MM-DD
         
-        const dayLogs = appData.checkins.filter(c => c.date === dateStr);
-        const dayTime = dayLogs.reduce((sum, c) => sum + parseInt(c.time), 0);
-        data.push(dayTime);
+        const logs = appData.checkins.filter(c => c.date === dateStr);
+        const mins = logs.reduce((sum, c) => sum + parseInt(c.time || 0), 0);
+        dataset.push(mins);
     }
 
-    if(timeChartInstance) {
-        timeChartInstance.destroy();
-    }
-
-    const isDark = appData.settings.theme === 'dark';
-    const textColor = isDark ? '#f9fafb' : '#1f2937';
-    const gridColor = isDark ? '#374151' : '#e5e7eb';
-
-    timeChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: '學習時間 (分鐘)',
-                data: data,
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.3
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { labels: { color: textColor } } },
-            scales: {
-                x: { ticks: { color: textColor }, grid: { color: gridColor } },
-                y: { ticks: { color: textColor }, grid: { color: gridColor }, beginAtZero: true }
+    if (typeof Chart !== 'undefined') {
+        window.myDailyChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '學習時間 (分鐘)',
+                    data: dataset,
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
             }
-        }
-    });
+        });
+    }
 }
-
-// 啟動應用程式
-init();
