@@ -22,7 +22,6 @@ const quotes = [
     "「語言是靈魂的血液。」 - 奧利弗·溫德爾·霍姆斯",
     "「懂一種語言就是了解一個世界。」 - 弗朗茨·法農",
     "「每天進步一點點，持續的力量是驚人的。」",
-    "「不怕慢，只怕站。」 - 中國諺語"
 ];
 
 // 閃卡當前狀態
@@ -545,7 +544,10 @@ function renderCharts() {
         
         const logs = appData.checkins.filter(c => c.date === dateStr);
         const mins = logs.reduce((sum, c) => sum + parseInt(c.time || 0), 0);
-        dataset.push(mins);
+        
+        // 💡 核心修改：將分鐘轉換為小時，並四捨五入到小數點後第一位 (例如 90 分鐘 -> 1.5 小時)
+        const hours = Math.round((mins / 60) * 10) / 10;
+        dataset.push(hours);
     }
 
     if (typeof Chart !== 'undefined') {
@@ -554,7 +556,7 @@ function renderCharts() {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: '學習時間 (分鐘)',
+                    label: '學習時間 (小時)', // 👈 這裡的標籤也改成小時了
                     data: dataset,
                     backgroundColor: '#3b82f6',
                     borderRadius: 4
@@ -562,7 +564,16 @@ function renderCharts() {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '小時 (h)' // 👈 在 Y 軸旁邊加上單位提示
+                        }
+                    }
+                }
             }
         });
     }
@@ -599,7 +610,9 @@ function renderReports() {
     }
     
     weekDaysEl.innerText = `${weekCheckedDates.size} / 7 天`;
-    weekTimeEl.innerText = `${weekTimeSum} 分鐘`;
+    // ✅ 改成顯示小時的寫法（同樣保留小數點後一位）
+const weekHoursSum = Math.round((weekTimeSum / 60) * 10) / 10;
+weekTimeEl.innerText = `${weekHoursSum} 小時`;
 
     // 2. 計算本月完成率 (以當月總天數計算)
     const currentYear = today.getFullYear();
