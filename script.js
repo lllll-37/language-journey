@@ -132,7 +132,15 @@ function renderAll() {
     renderMistakes();
     renderHeatmap();
     renderQuickNotes(); // 自動渲染筆記
+    renderReports();    // 👈 補上這行：讓全站同步刷新卡片數據
+    renderCharts();     // 👈 補上這行：讓全站同步刷新圖表
     updateMistakeFilters();
+    
+    const today = new Date().toISOString().split('T')[0];
+    if(document.getElementById('checkin-date')) document.getElementById('checkin-date').value = today;
+    if(document.getElementById('mistake-date')) document.getElementById('mistake-date').value = today;
+    if(document.getElementById('setting-goal')) document.getElementById('setting-goal').value = appData.settings.dailyGoal;
+}
     
     const today = new Date().toISOString().split('T')[0];
     if(document.getElementById('checkin-date')) document.getElementById('checkin-date').value = today;
