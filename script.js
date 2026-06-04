@@ -91,7 +91,11 @@ function setupNavigation() {
                 if (sec.id === targetId) sec.classList.add('active');
             });
             
-            if(targetId === 'reports') renderCharts();
+            // ✅ 改成這樣：切換到統計報告時，同時刷新文字卡片與圖表
+            if (targetId === 'reports') {
+                renderReports(); 
+                renderCharts();
+            }
 
             // RWD 縮小時，點擊選項自動收回選單
             if(window.innerWidth <= 768) {
@@ -341,7 +345,6 @@ function renderQuickNotes() {
     if (!updateList || !memoList) return; 
 
     updateList.innerHTML = '';
-    text = '';
     memoList.innerHTML = '';
 
     let hasUpdate = false;
@@ -562,5 +565,93 @@ function renderCharts() {
                 maintainAspectRatio: false
             }
         });
+    }
+}
+
+// ===== 📊 統計報告卡片數據動態計算 =====
+function renderReports() {
+    const weekDaysEl = document.getElementById('report-week-days');
+    const weekTimeEl = document.getElementById('report-week-time');
+    const monthRateEl = document.getElementById('report-month-rate');
+    const topLangEl = document.getElementById('report-top-lang');
+    const reportMessageEl = document.getElementById('report-message');
+
+    // 安全機制：如果 HTML 還沒渲染好或找不到欄位，就先不執行，避免程式死掉
+    if (!weekDaysEl) return; 
+
+    // 使用當前時間 (2026年) 作為基準計算
+    const today = new Date();
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    
+    // 1. 計算本週 (最近 7 天，含今天) 完成天數與總時間
+    let weekTimeSum = 0;
+    let weekCheckedDates = new Set();
+    
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(today.getTime() - (i * oneDayMs));
+        const dateStr = d.toISOString().split('T')[0];
+        
+        const dayLogs = appData.checkins.filter(c => c.date === dateStr);
+        if (dayLogs.length > 0) {
+            weekCheckedDates.add(dateStr);
+            weekTimeSum += dayLogs.reduce((sum, c) => sum + parseInt(c.time || 0), 0);
+        }
+    }
+    
+    weekDaysEl.innerText = `${weekCheckedDates.size} / 7 天`;
+    weekTimeEl.innerText = `${weekTimeSum} 分鐘`;
+
+    // 2. 計算本月完成率 (以當月總天數計算)
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth(); // 0-11
+    const totalDaysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    
+    let monthCheckedDates = new Set();
+    appData.checkins.forEach(c => {
+        if (c.date) {
+            const cParts = c.date.split('-'); // 防呆拆解日期字串 "YYYY-MM-DD"
+            if (parseInt(cParts[0]) === currentYear && parseInt(cParts[1]) === (currentMonth + 1)) {
+                monthCheckedDates.add(c.date);
+            }
+        }
+    });
+    
+    const monthRate = Math.round((monthCheckedDates.size / totalDaysInMonth) * 100);
+    if (monthRateEl) monthRateEl.innerText = `${monthRate}%`;
+
+    // 3. 計算最常學習語言 (從錯題紀錄分析)
+    if (appData.mistakes && appData.mistakes.length > 0) {
+        const langCounts = {};
+        appData.mistakes.forEach(m => {
+            if (m.lang) langCounts[m.lang] = (langCounts[m.lang] || 0) + 1;
+        });
+        let topLang = '無資料';
+        let maxCount = 0;
+        for (let lang in langCounts) {
+            if (langCounts[lang] > maxCount) {
+                maxCount = langCounts[lang];
+                topLang = lang;
+            }
+        }
+        topLangEl.innerText = topLang;
+    } else {
+        topLangEl.innerText = '無資料';
+    }
+
+    // 4. 動態格言/鼓勵卡片
+    if (reportMessageEl) {
+        if (weekCheckedDates.size >= 5) {
+            reportMessageEl.innerText = "🔥 太強了！這週你簡真就是語言學習大師，繼續保持這個勢頭！";
+            reportMessageEl.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
+            reportMessageEl.style.color = "#10b981";
+        } else if (weekCheckedDates.size >= 1) {
+            reportMessageEl.innerText = "💪 棒極了！每一步前進都在累積實力，這週也一起加油吧！";
+            reportMessageEl.style.backgroundColor = "rgba(59, 130, 246, 0.1)";
+            reportMessageEl.style.color = "#3b82f6";
+        } else {
+            reportMessageEl.innerText = "🌱 學習是一場馬拉松，今天就是重新啟航的好日子，出發打卡吧！";
+            reportMessageEl.style.backgroundColor = "rgba(234, 179, 8, 0.1)";
+            reportMessageEl.style.color = "#ca8a04";
+        }
     }
 }
