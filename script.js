@@ -1,5 +1,7 @@
 // ===== 核心狀態與資料設定 =====
 const STORAGE_KEY = 'languageJourneyApp';
+const NOTES_STORAGE_KEY = 'language_journey_notes'; // 隨手筆記專用 Key
+
 let appData = {
     checkins: [],  // { id, date, content, time, note }
     mistakes: [],  // { id, lang, date, q, myans, correct, reason }
@@ -9,7 +11,10 @@ let appData = {
     }
 };
 
-let timeChartInstance = null; // 紀錄 Chart.js 實例
+// 隨手筆記狀態管理
+let savedNotes = [
+    { type: 'reminder', text: '📌 在編輯 GitHub 程式時要記得按鉛筆 ✏️ 進入編輯狀態！' }
+];
 
 // 每日格言庫
 const quotes = [
@@ -26,6 +31,7 @@ function init() {
     applyTheme();
     setupNavigation();
     setupForms();
+    setupQuickNotesForm(); // 🔥 綁定隨手筆記表單
     setDailyQuote();
     renderAll();
 }
@@ -36,15 +42,28 @@ function loadData() {
     if (saved) {
         try {
             appData = JSON.parse(saved);
-            // 確保設定物件存在以防舊版升級
             if (!appData.settings) appData.settings = { dailyGoal: 30, theme: 'light' };
         } catch (e) { console.error("資料載入錯誤", e); }
+    }
+
+    // 載入隨手筆記資料
+    const savedNotesData = localStorage.getItem(NOTES_STORAGE_KEY);
+    if (savedNotesData) {
+        try {
+            savedNotes = JSON.parse(savedNotesData);
+        } catch (e) { console.error("筆記載入錯誤", e); }
     }
 }
 
 function saveData() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
     renderAll(); // 存檔後自動刷新畫面
+}
+
+// 隨手筆記專用存檔
+function saveNotesData() {
+    localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(savedNotes));
+    renderQuickNotes(); // 只刷新筆記畫面
 }
 
 // ===== 介面渲染與導覽 =====
@@ -56,21 +75,17 @@ function setupNavigation() {
 
     links.forEach(link => {
         link.addEventListener('click', (e) => {
-            // 切換 active class
             links.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
             
-            // 切換頁面
             const targetId = link.getAttribute('data-target');
             sections.forEach(sec => {
                 sec.classList.remove('active');
                 if (sec.id === targetId) sec.classList.add('active');
             });
             
-            // 如果是報告頁面，重新繪製圖表
             if(targetId === 'reports') renderCharts();
 
-            // 手機版點擊後收合選單
             if(window.innerWidth <= 768) sidebar.classList.remove('open');
         });
     });
@@ -99,8 +114,9 @@ function renderAll() {
     renderLogs();
     renderMistakes();
     renderHeatmap();
+    renderQuickNotes(); // 🔥 讓筆記在初始化與任何重新渲染時自動顯示
     updateMistakeFilters();
-    // 預設填入今日日期
+    
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('checkin-date').value = today;
     document.getElementById('mistake-date').value = today;
@@ -114,7 +130,7 @@ function getTodayString() {
 
 function calculateStreak() {
     let dates = appData.checkins.map(c => c.date).sort().reverse();
-    dates = [...new Set(dates)]; // 去除同一天打卡多次的重複日期
+    dates = [...new Set(dates)];
     
     if (dates.length === 0) return 0;
     
@@ -122,13 +138,12 @@ function calculateStreak() {
     let currentDate = new Date();
     currentDate.setHours(0,0,0,0);
     
-    // 檢查今天是否有打卡，若無則從昨天開始算
     let lastRecordDate = new Date(dates[0]);
     lastRecordDate.setHours(0,0,0,0);
     const diffTime = Math.abs(currentDate - lastRecordDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays > 1) return 0; // 昨天和今天都沒打卡，中斷
+    if (diffDays > 1) return 0;
     
     let expectedDate = new Date(dates[0]);
     for (let d of dates) {
@@ -149,7 +164,6 @@ function renderDashboard() {
     const todayLogs = appData.checkins.filter(c => c.date === today);
     const todayTime = todayLogs.reduce((sum, c) => sum + parseInt(c.time), 0);
     
-    // 狀態卡片
     const statusEl = document.getElementById('dash-status');
     if (todayLogs.length > 0) {
         statusEl.innerText = '✅ 已打卡';
@@ -163,7 +177,6 @@ function renderDashboard() {
     const totalTime = appData.checkins.reduce((sum, c) => sum + parseInt(c.time), 0);
     document.getElementById('dash-time').innerText = `${totalTime} 分鐘`;
 
-    // 進度條
     const goal = appData.settings.dailyGoal;
     const progressText = document.getElementById('dash-progress-text');
     const progressBar = document.getElementById('dash-progress');
@@ -171,7 +184,6 @@ function renderDashboard() {
     let percent = Math.min((todayTime / goal) * 100, 100);
     progressBar.style.width = `${percent}%`;
 
-    // 最近紀錄
     const recentLogs = [...appData.checkins].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 3);
     const logsHtml = recentLogs.map(l => `<li><span>${l.date}</span> <span>${l.content} (${l.time}m)</span></li>`).join('');
     document.getElementById('dash-recent-logs').innerHTML = logsHtml || '<li>尚無紀錄</li>';
@@ -219,12 +231,10 @@ function setupForms() {
         alert('錯題新增成功！');
     });
 
-    // 搜尋功能
     document.getElementById('search-logs').addEventListener('input', renderLogs);
     document.getElementById('search-mistakes').addEventListener('input', renderMistakes);
     document.getElementById('filter-mistakes').addEventListener('change', renderMistakes);
 
-    // 設定管理
     document.getElementById('btn-toggle-theme').addEventListener('click', () => {
         appData.settings.theme = appData.settings.theme === 'light' ? 'dark' : 'light';
         applyTheme();
@@ -238,7 +248,6 @@ function setupForms() {
         alert('學習目標已更新！');
     });
 
-    // 資料匯出與匯入
     document.getElementById('btn-export').addEventListener('click', () => {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData));
         const downloadAnchorNode = document.createElement('a');
@@ -270,13 +279,84 @@ function setupForms() {
         reader.readAsText(file);
     });
 
-    // 隨機複習邏輯
     document.getElementById('flashcard').addEventListener('click', toggleFlashcard);
     document.getElementById('btn-show-answer').addEventListener('click', toggleFlashcard);
     document.getElementById('btn-next-card').addEventListener('click', loadRandomFlashcard);
     
-    // 初始化時綁定複習頁面的點擊事件，當進入複習頁面就載入題目
     document.querySelector('[data-target="review"]').addEventListener('click', loadRandomFlashcard);
+}
+
+// ===== 📝 隨手筆記與注意事項 核心邏輯 =====
+function setupQuickNotesForm() {
+    const noteForm = document.getElementById('note-form');
+    if (noteForm) {
+        noteForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const type = document.getElementById('note-type').value;
+            const noteTextInput = document.getElementById('note-text');
+            const text = noteTextInput.value.trim();
+            const prefix = type === 'reminder' ? '📌 ' : '⚠️ ';
+
+            if (text) {
+                savedNotes.push({
+                    type: type,
+                    text: prefix + text
+                });
+                saveNotesData(); // 存檔並刷新
+                noteTextInput.value = ''; // 清空輸入框
+            }
+        });
+    }
+}
+
+function renderQuickNotes() {
+    const reminderList = document.getElementById('reminder-list');
+    const noticeList = document.getElementById('notice-list');
+    
+    if (!reminderList || !noticeList) return; // 安全機制
+
+    reminderList.innerHTML = '';
+    noticeList.innerHTML = '';
+
+    let hasReminder = false;
+    let hasNotice = false;
+
+    savedNotes.forEach((note, index) => {
+        const li = document.createElement('li');
+        li.style.padding = '10px 0';
+        li.style.borderBottom = '1px solid rgba(0,0,0,0.05)';
+        li.style.display = 'flex';
+        li.style.justifyContent = 'space-between';
+        li.style.alignItems = 'center';
+
+        li.innerHTML = `
+            <span>${note.text}</span>
+            <button class="btn-delete-note" data-index="${index}" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 0 5px;">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+        `;
+
+        if (note.type === 'reminder') {
+            reminderList.appendChild(li);
+            hasReminder = true;
+        } else {
+            noticeList.appendChild(li);
+            hasNotice = true;
+        }
+    });
+
+    if (!hasReminder) reminderList.innerHTML = '<li style="padding: 10px 0; color: gray;">💡 目前尚無小提醒。</li>';
+    if (!hasNotice) noticeList.innerHTML = '<li style="padding: 10px 0; color: gray;">📭 目前尚無注意事項。</li>';
+
+    // 綁定刪除按鈕
+    document.querySelectorAll('.btn-delete-note').forEach(btn => {
+        btn.onclick = (e) => {
+            const indexToRemove = e.currentTarget.getAttribute('data-index');
+            savedNotes.splice(indexToRemove, 1);
+            saveNotesData();
+        };
+    });
 }
 
 // ===== 日誌與錯題渲染 =====
@@ -284,7 +364,6 @@ function renderLogs() {
     const container = document.getElementById('logs-timeline');
     const keyword = document.getElementById('search-logs').value.toLowerCase();
     
-    // 依日期排序
     let filtered = [...appData.checkins].sort((a,b) => new Date(b.date) - new Date(a.date));
     if (keyword) {
         filtered = filtered.filter(l => l.content.toLowerCase().includes(keyword) || l.note.toLowerCase().includes(keyword));
@@ -347,7 +426,7 @@ function updateMistakeFilters() {
     langs.forEach(lang => {
         select.innerHTML += `<option value="${lang}">${lang}</option>`;
     });
-    select.value = currentVal; // 保留當前選項
+    select.value = currentVal;
 }
 
 window.deleteData = function(type, id) {
@@ -373,7 +452,6 @@ function loadRandomFlashcard() {
 
     document.getElementById('btn-show-answer').style.display = 'block';
     
-    // 隨機抽取
     const randIndex = Math.floor(Math.random() * appData.mistakes.length);
     const m = appData.mistakes[randIndex];
 
@@ -398,25 +476,22 @@ function toggleFlashcard() {
 // ===== 熱力圖 (GitHub Contribution Style) =====
 function renderHeatmap() {
     const container = document.getElementById('heatmap');
+    if (!container) return;
     container.innerHTML = '';
     
-    // 建立過去 365 天的資料地圖
     const today = new Date();
     const map = {};
     appData.checkins.forEach(c => {
         map[c.date] = (map[c.date] || 0) + 1;
     });
 
-    // 產生 52 欄 x 7 列的網格
     for (let col = 52; col >= 0; col--) {
         const colDiv = document.createElement('div');
         colDiv.className = 'heatmap-col';
         for (let row = 0; row < 7; row++) {
-            // 計算日期
             const d = new Date(today);
             d.setDate(d.getDate() - (col * 7 + (6 - row))); 
             
-            // 超過未來的日期不畫 (因為第一欄可能包含未來的日期，視星期幾而定)
             if (d > today) {
                 const empty = document.createElement('div');
                 empty.style.width = '12px'; empty.style.height = '12px';
@@ -430,7 +505,6 @@ function renderHeatmap() {
             const cell = document.createElement('div');
             cell.className = 'heatmap-cell';
             
-            // 設定顏色深淺
             if (count === 1) cell.classList.add('level-1');
             else if (count === 2) cell.classList.add('level-2');
             else if (count === 3) cell.classList.add('level-3');
@@ -441,7 +515,6 @@ function renderHeatmap() {
         }
         container.appendChild(colDiv);
     }
-    // 捲動到最右邊 (最新)
     container.scrollLeft = container.scrollWidth;
 }
 
@@ -450,7 +523,6 @@ function renderCharts() {
     const today = new Date();
     today.setHours(0,0,0,0);
     
-    // 計算本週與本月數據
     let weekDays = new Set();
     let weekTime = 0;
     let monthDays = new Set();
@@ -470,7 +542,6 @@ function renderCharts() {
         }
     });
 
-    // 找出最常學語言 (從錯題庫統計，或用日誌關鍵字，這裡示範用錯題庫的語言設定)
     appData.mistakes.forEach(m => {
         langCounts[m.lang] = (langCounts[m.lang] || 0) + 1;
     });
@@ -481,23 +552,21 @@ function renderCharts() {
 
     const monthRate = Math.round((monthDays.size / 30) * 100);
 
-    // 寫入 UI
     document.getElementById('report-week-days').innerText = `${weekDays.size}/7 天`;
     document.getElementById('report-week-time').innerText = `${weekTime} 分鐘`;
     document.getElementById('report-month-rate').innerText = `${monthRate}%`;
     document.getElementById('report-top-lang').innerText = topLang;
 
-    // 鼓勵訊息
     const msgEl = document.getElementById('report-message');
     if(monthRate >= 90) msgEl.innerText = "太強了！這月幾乎天天都在進步！🏆";
     else if(monthRate >= 70) msgEl.innerText = "表現不錯，保持這個節奏！🔥";
     else if(monthRate >= 50) msgEl.innerText = "已經累積不少成果了，再多一點就更棒！👍";
     else msgEl.innerText = "別灰心，重新開始永遠不嫌晚！🌱";
 
-    // Chart.js - 最近 7 天學習時間折線圖
-    const ctx = document.getElementById('timeChart').getContext('2d');
+    const chartCanvas = document.getElementById('timeChart');
+    if (!chartCanvas) return;
+    const ctx = chartCanvas.getContext('2d');
     
-    // 準備最近 7 天的標籤與數據
     let labels = [];
     let data = [];
     for(let i=6; i>=0; i--) {
@@ -506,14 +575,13 @@ function renderCharts() {
         const dateStr = d.toISOString().split('T')[0];
         labels.push(d.toLocaleDateString('zh-TW', {month:'short', day:'numeric'}));
         
-        // 計算該日總時間
         const dayLogs = appData.checkins.filter(c => c.date === dateStr);
         const dayTime = dayLogs.reduce((sum, c) => sum + parseInt(c.time), 0);
         data.push(dayTime);
     }
 
     if(timeChartInstance) {
-        timeChartInstance.destroy(); // 避免圖表重疊
+        timeChartInstance.destroy();
     }
 
     const isDark = appData.settings.theme === 'dark';
@@ -546,103 +614,4 @@ function renderCharts() {
 }
 
 // 啟動應用程式
-init();// ==========================================
-// 📝 隨手筆記與注意事項 功能邏輯
-// ==========================================
-
-document.addEventListener('DOMContentLoaded', () => {
-    const noteForm = document.getElementById('note-form');
-    const noteTypeSelect = document.getElementById('note-type');
-    const noteTextInput = document.getElementById('note-text');
-    const reminderList = document.getElementById('reminder-list');
-    const noticeList = document.getElementById('notice-list');
-
-    // 1. 從 LocalStorage 載入筆記資料
-    let savedNotes = JSON.parse(localStorage.getItem('language_journey_notes')) || [
-        // 預設給一個小提醒，避免畫面空空的
-        { type: 'reminder', text: '📌 在編輯 GitHub 程式時要記得按鉛筆 ✏️ 進入編輯狀態！' }
-    ];
-
-    // 2. 渲染筆記到畫面上
-    function renderNotes() {
-        // 先清空原有的列表內容
-        reminderList.innerHTML = '';
-        noticeList.innerHTML = '';
-
-        let hasReminder = false;
-        let hasNotice = false;
-
-        savedNotes.forEach((note, index) => {
-            const li = document.createElement('li');
-            li.style.padding = '10px 0';
-            li.style.borderBottom = '1px solid rgba(0,0,0,0.05)';
-            li.style.display = 'flex';
-            li.style.justifyContent = 'space-between';
-            li.style.alignItems = 'center';
-
-            // 內文與刪除按鈕
-            li.innerHTML = `
-                <span>${note.text}</span>
-                <button class="btn-delete-note" data-index="${index}" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 0 5px;">
-                    <i class="fa-solid fa-trash-can"></i>
-                </button>
-            `;
-
-            // 分流投放到對應的區塊
-            if (note.type === 'reminder') {
-                reminderList.appendChild(li);
-                hasReminder = true;
-            } else {
-                noticeList.appendChild(li);
-                hasNotice = true;
-            }
-        });
-
-        // 如果空無一物，顯示提示字
-        if (!hasReminder) {
-            reminderList.innerHTML = '<li style="padding: 10px 0; color: gray;">💡 目前尚無小提醒。</li>';
-        }
-        if (!hasNotice) {
-            noticeList.innerHTML = '<li style="padding: 10px 0; color: gray;">📭 目前尚無注意事項。</li>';
-        }
-
-        // 綁定刪除按鈕事件
-        document.querySelectorAll('.btn-delete-note').forEach(btn => {
-            btn.onclick = (e) => {
-                const indexToRemove = e.currentTarget.getAttribute('data-index');
-                savedNotes.splice(indexToRemove, 1); // 刪除該筆資料
-                localStorage.setItem('language_journey_notes', JSON.stringify(savedNotes)); // 更新儲存
-                renderNotes(); // 重新渲染
-            };
-        });
-    }
-
-    // 3. 監聽表單送出事件（新增筆記）
-    if (noteForm) {
-        noteForm.addEventListener('submit', (e) => {
-            e.preventDefault(); // 防止網頁重整
-
-            const type = noteTypeSelect.value;
-            const text = noteTextInput.value.trim();
-            const prefix = type === 'reminder' ? '📌 ' : '⚠️ ';
-
-            if (text) {
-                // 將新筆記推入陣列
-                savedNotes.push({
-                    type: type,
-                    text: prefix + text
-                });
-
-                // 存入 LocalStorage 永久保存
-                localStorage.setItem('language_journey_notes', JSON.stringify(savedNotes));
-
-                // 重新渲染畫面並清空輸入框
-                renderNotes();
-                noteTextInput.value = '';
-            }
-        });
-    }
-
-    // 網頁載入時先執行一次渲染
-    renderNotes();
-});
+init();
