@@ -286,7 +286,7 @@ function setupForms() {
     document.querySelector('[data-target="review"]').addEventListener('click', loadRandomFlashcard);
 }
 
-// ===== 📝 隨手筆記與注意事項 核心邏輯 =====
+// ===== 📝 隨手筆記與注意事項 核心邏輯 (新分類版) =====
 function setupQuickNotesForm() {
     const noteForm = document.getElementById('note-form');
     if (noteForm) {
@@ -296,7 +296,8 @@ function setupQuickNotesForm() {
             const type = document.getElementById('note-type').value;
             const noteTextInput = document.getElementById('note-text');
             const text = noteTextInput.value.trim();
-            const prefix = type === 'reminder' ? '📌 ' : '⚠️ ';
+            // 根據不同分類給予不同的圖示前綴
+            const prefix = type === 'update' ? '✨ ' : '📖 ';
 
             if (text) {
                 savedNotes.push({
@@ -310,6 +311,56 @@ function setupQuickNotesForm() {
     }
 }
 
+function renderQuickNotes() {
+    const updateList = document.getElementById('update-list');
+    const memoList = document.getElementById('memo-list');
+    
+    if (!updateList || !memoList) return; // 安全機制
+
+    updateList.innerHTML = '';
+    memoList.innerHTML = '';
+
+    let hasUpdate = false;
+    let hasMemo = false;
+
+    savedNotes.forEach((note, index) => {
+        const li = document.createElement('li');
+        li.style.padding = '10px 0';
+        li.style.borderBottom = '1px solid rgba(0,0,0,0.05)';
+        li.style.display = 'flex';
+        li.style.justifyContent = 'space-between';
+        li.style.alignItems = 'center';
+
+        li.innerHTML = `
+            <span>${note.text}</span>
+            <button class="btn-delete-note" data-index="${index}" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 0 5px;">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+        `;
+
+        // 根據新分類分流投放到對應的區塊
+        if (note.type === 'update' || note.type === 'reminder') { 
+            // 註：保留 note.type === 'reminder' 是為了相容你之前瀏覽器留下的舊快取資料，避免出錯
+            updateList.appendChild(li);
+            hasUpdate = true;
+        } else {
+            memoList.appendChild(li);
+            hasMemo = true;
+        }
+    });
+
+    if (!hasUpdate) updateList.innerHTML = '<li style="padding: 10px 0; color: gray;">💡 目前尚無待更新或優化想法。</li>';
+    if (!hasMemo) memoList.innerHTML = '<li style="padding: 10px 0; color: gray;">💡 目前尚無學習備忘紀錄。</li>';
+
+    // 重新綁定垃圾桶刪除按鈕
+    document.querySelectorAll('.btn-delete-note').forEach(btn => {
+        btn.onclick = (e) => {
+            const indexToRemove = e.currentTarget.getAttribute('data-index');
+            savedNotes.splice(indexToRemove, 1);
+            saveNotesData();
+        };
+    });
+}
 function renderQuickNotes() {
     const reminderList = document.getElementById('reminder-list');
     const noticeList = document.getElementById('notice-list');
