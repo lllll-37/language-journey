@@ -106,8 +106,7 @@
             <div class="toolbar">
                 <input type="text" id="search-logs" placeholder="搜尋學習內容...">
             </div>
-            <div class="timeline" id="logs-timeline">
-                </div>
+            <div class="timeline" id="logs-timeline"></div>
         </section>
 
         <section id="mistakes" class="page-section">
@@ -239,55 +238,48 @@
                 </div>
             </div>
         </section>
-        <!-- 隨手筆記區塊 -->
-<section id="quick-notes" class="page-section">
-    <h2>📝 隨手筆記與備忘</h2>
-    <p class="text-gray">隨手紀錄開發靈感、優化想法或學習過程中的重要備忘。</p>
 
-    <!-- 輸入表單卡片 -->
-    <div class="card mt-2">
-        <form id="note-form" style="display: flex; flex-direction: column; gap: 15px;">
-            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                <div style="flex: 1; min-width: 150px;">
-                    <label for="note-type" style="display: block; margin-bottom: 5px; font-weight: bold;">📝 筆記分類</label>
-                    <select id="note-type" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; background-color: var(--card-bg); color: var(--text-color);">
-                        <option value="update">✨ 功能更新/優化</option>
-                        <option value="memo">📖 學習備忘錄</option>
-                    </select>
+        <section id="quick-notes" class="page-section">
+            <h2>📝 隨手筆記與備忘</h2>
+            <p class="text-gray">隨手紀錄開發靈感、優化想法或學習過程中的重要備忘。</p>
+
+            <div class="card mt-2">
+                <form id="note-form" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 150px;">
+                            <label for="note-type" style="display: block; margin-bottom: 5px; font-weight: bold;">📝 筆記分類</label>
+                            <select id="note-type" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; background-color: var(--card-bg); color: var(--text-color);">
+                                <option value="update">✨ 功能更新/優化</option>
+                                <option value="memo">📖 學習備忘錄</option>
+                            </select>
+                        </div>
+                        <div style="flex: 3; min-width: 250px;">
+                            <label for="note-text" style="display: block; margin-bottom: 5px; font-weight: bold;">✍️ 內容</label>
+                            <input type="text" id="note-text" placeholder="輸入要紀錄的內容..." required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; background-color: var(--card-bg); color: var(--text-color);">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn" style="align-self: flex-end; padding: 10px 20px;"><i class="fa-solid fa-floppy-disk"></i> 儲存紀錄</button>
+                </form>
+            </div>
+
+            <div class="dashboard-grid mt-2">
+                <div class="card">
+                    <h3 style="border-bottom: 2px solid #3b82f6; padding-bottom: 8px; margin-bottom: 12px; color: #3b82f6;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 功能更新/優化
+                    </h3>
+                    <ul id="update-list" style="list-style: none; padding: 0; margin: 0;"></ul>
                 </div>
-                <div style="flex: 3; min-width: 250px;">
-                    <label for="note-text" style="display: block; margin-bottom: 5px; font-weight: bold;">✍️ 內容</label>
-                    <input type="text" id="note-text" placeholder="輸入要紀錄的內容..." required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; background-color: var(--card-bg); color: var(--text-color);">
+
+                <div class="card">
+                    <h3 style="border-bottom: 2px solid #10b981; padding-bottom: 8px; margin-bottom: 12px; color: #10b981;">
+                        <i class="fa-solid fa-book-bookmark"></i> 學習備忘錄
+                    </h3>
+                    <ul id="memo-list" style="list-style: none; padding: 0; margin: 0;"></ul>
                 </div>
             </div>
-            <button type="submit" class="btn" style="align-self: flex-end; padding: 10px 20px;"><i class="fa-solid fa-floppy-disk"></i> 儲存紀錄</button>
-        </form>
-    </div>
+        </section>
 
-    <!-- 左右兩欄顯示區 -->
-    <div class="dashboard-grid mt-2">
-        <!-- 左欄：功能更新/優化 -->
-        <div class="card">
-            <h3 style="border-bottom: 2px solid #3b82f6; padding-bottom: 8px; margin-bottom: 12px; color: #3b82f6;">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> 功能更新/優化
-            </h3>
-            <ul id="update-list" style="list-style: none; padding: 0; margin: 0;">
-                <!-- 由 JS 動態產生 -->
-            </ul>
-        </div>
-
-        <!-- 右欄：學習備忘錄 -->
-        <div class="card">
-            <h3 style="border-bottom: 2px solid #10b981; padding-bottom: 8px; margin-bottom: 12px; color: #10b981;">
-                <i class="fa-solid fa-book-bookmark"></i> 學習備忘錄
-            </h3>
-            <ul id="memo-list" style="list-style: none; padding: 0; margin: 0;">
-                <!-- 由 JS 動態產生 -->
-            </ul>
-        </div>
-    </div>
-</section>
-<section id="changelog" class="page-section">
+        <section id="changelog" class="page-section">
             <h2><i class="fa-solid fa-code-branch"></i> 開發日誌 (Changelog)</h2>
             <p class="text-gray" style="margin-bottom: 20px;">記錄 Language Journey 的進化與成長歷程，落實 Build in Public 的精神！</p>
             
@@ -301,7 +293,6 @@
             </div>
 
             <div class="changelog-timeline">
-                
                 <div class="changelog-card card">
                     <div class="version-tag badge-blue">v1.1.1</div>
                     <span class="changelog-date">2026-06-02</span>
@@ -339,7 +330,6 @@
                         <li><i class="fa-solid fa-circle-check text-green"></i> <strong>雙色主題</strong>：支援淺色模式與極簡深色模式。</li>
                     </ul>
                 </div>
-
             </div> 
         </section> 
     </main>
