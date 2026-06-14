@@ -90,7 +90,7 @@ function setupNavigation() {
                 if (sec.id === targetId) sec.classList.add('active');
             });
             
-            // ✅ 改成這樣：切換到統計報告時，同時刷新文字卡片與圖表
+            // 切換到統計報告時，同時刷新文字卡片與圖表
             if (targetId === 'reports') {
                 renderReports(); 
                 renderCharts();
@@ -132,15 +132,9 @@ function renderAll() {
     renderMistakes();
     renderHeatmap();
     renderQuickNotes(); // 自動渲染筆記
-    renderReports();    // 👈 補上這行：讓全站同步刷新卡片數據
-    renderCharts();     // 👈 補上這行：讓全站同步刷新圖表
+    renderReports();    // 讓全站同步刷新卡片數據
+    renderCharts();     // 讓全站同步刷新圖表
     updateMistakeFilters();
-    
-    const today = new Date().toISOString().split('T')[0];
-    if(document.getElementById('checkin-date')) document.getElementById('checkin-date').value = today;
-    if(document.getElementById('mistake-date')) document.getElementById('mistake-date').value = today;
-    if(document.getElementById('setting-goal')) document.getElementById('setting-goal').value = appData.settings.dailyGoal;
-}
     
     const today = new Date().toISOString().split('T')[0];
     if(document.getElementById('checkin-date')) document.getElementById('checkin-date').value = today;
@@ -447,7 +441,7 @@ function renderMistakes() {
         const div = document.createElement('div');
         div.className = 'card';
         div.innerHTML = `
-            <div style="display:flex; justify-content:between; align-items:start; flex-direction:column; gap:8px; position:relative;">
+            <div style="display:flex; justify-content:space-between; align-items:start; flex-direction:column; gap:8px; position:relative;">
                 <span class="badge-blue" style="padding:2px 6px; font-size:0.8rem; border-radius:4px;">${m.lang} (${m.date})</span>
                 <h4 style="margin-top:5px;">題目：${m.q}</h4>
                 <p class="text-red">您的答案：${m.myans || '未填'}</p>
@@ -553,7 +547,7 @@ function renderCharts() {
         const logs = appData.checkins.filter(c => c.date === dateStr);
         const mins = logs.reduce((sum, c) => sum + parseInt(c.time || 0), 0);
         
-        // 💡 核心修改：將分鐘轉換為小時，並四捨五入到小數點後第一位 (例如 90 分鐘 -> 1.5 小時)
+        // 將分鐘轉換為小時，並四捨五入到小數點後第一位
         const hours = Math.round((mins / 60) * 10) / 10;
         dataset.push(hours);
     }
@@ -564,7 +558,7 @@ function renderCharts() {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: '學習時間 (小時)', // 👈 這裡的標籤也改成小時了
+                    label: '學習時間 (小時)', 
                     data: dataset,
                     backgroundColor: '#3b82f6',
                     borderRadius: 4
@@ -578,7 +572,7 @@ function renderCharts() {
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: '小時 (h)' // 👈 在 Y 軸旁邊加上單位提示
+                            text: '小時 (h)' 
                         }
                     }
                 }
@@ -617,10 +611,11 @@ function renderReports() {
         }
     }
     
-    weekDaysEl.innerText = `${weekCheckedDates.size} / 7 天`;
-    // ✅ 改成顯示小時的寫法（同樣保留小數點後一位）
-const weekHoursSum = Math.round((weekTimeSum / 60) * 10) / 10;
-weekTimeEl.innerText = `${weekHoursSum} 小時`;
+    if (weekDaysEl) weekDaysEl.innerText = `${weekCheckedDates.size} / 7 天`;
+    
+    // 顯示小時的寫法
+    const weekHoursSum = Math.round((weekTimeSum / 60) * 10) / 10;
+    if (weekTimeEl) weekTimeEl.innerText = `${weekHoursSum} 小時`;
 
     // 2. 計算本月完成率 (以當月總天數計算)
     const currentYear = today.getFullYear();
@@ -654,9 +649,9 @@ weekTimeEl.innerText = `${weekHoursSum} 小時`;
                 topLang = lang;
             }
         }
-        topLangEl.innerText = topLang;
+        if (topLangEl) topLangEl.innerText = topLang;
     } else {
-        topLangEl.innerText = '無資料';
+        if (topLangEl) topLangEl.innerText = '無資料';
     }
 
     // 4. 動態格言/鼓勵卡片
